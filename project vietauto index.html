@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AutoViet Showroom - Danh sách xe</title>
+<style>
+  /* 1. Design tokens: khai báo màu một lần ở :root, cả trang dùng lại.
+        Muốn đổi giao diện chỉ cần sửa tại đây. Có thêm bản cho chế độ tối. */
+  :root {
+    --bg: #f4f6f9; --card: #ffffff; --text: #1b2430; --muted: #5b6878;
+    --line: #dde3ea; --accent: #1f5fbf; --accent-text: #ffffff;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12171e; --card: #1b222c; --text: #e8edf3; --muted: #98a4b3;
+      --line: #2c3644; --accent: #5b9bff; --accent-text: #0b1422;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12171e; --card: #1b222c; --text: #e8edf3; --muted: #98a4b3;
+    --line: #2c3644; --accent: #5b9bff; --accent-text: #0b1422;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+
+  /* 2. Bố cục: max-width + margin auto giúp nội dung nằm giữa và không quá rộng */
+  header { background: var(--accent); color: var(--accent-text); padding: 20px 16px; }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  header p { margin: 4px 0 0; opacity: .85; font-size: .9rem; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+  /* 3. Thanh bộ lọc: flex + wrap để tự xuống dòng trên điện thoại */
+  .filters { display: flex; flex-wrap: wrap; gap: 12px; background: var(--card);
+             border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .filters label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem;
+                   color: var(--muted); flex: 1 1 150px; }
+  .filters select { padding: 9px; border-radius: 8px; border: 1px solid var(--line);
+                    background: var(--bg); color: var(--text); font-size: .95rem; }
+  #count { margin: 14px 2px; color: var(--muted); font-size: .9rem; }
+
+  /* 4. Lưới thẻ xe: auto-fill + minmax tự chia cột theo độ rộng màn hình
+        (không cần media query), là kỹ thuật responsive rất phổ biến */
+  #grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .thumb { height: 120px; display: flex; align-items: center; justify-content: center;
+           font-size: 3rem; }
+  .info { padding: 12px 14px 16px; }
+  .info h3 { margin: 0 0 4px; font-size: 1.05rem; }
+  .meta { color: var(--muted); font-size: .85rem; }
+  .price { margin-top: 8px; font-weight: 700; color: var(--accent); font-size: 1.1rem; }
+  .tag { display: inline-block; font-size: .7rem; padding: 2px 8px; border-radius: 99px;
+         border: 1px solid var(--line); margin-left: 6px; vertical-align: middle; }
+  .empty { grid-column: 1 / -1; text-align: center; padding: 40px 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>AutoViet Showroom</h1>
+  <p>Dữ liệu xe và giá chỉ là mẫu để học tập</p>
+</header>
+
+<main>
+  <!-- 5. Bộ lọc: mỗi ô là một <select>; id dùng để JavaScript tìm đúng phần tử -->
+  <section class="filters">
+    <label>Hãng xe <select id="brand"><option value="">Tất cả</option></select></label>
+    <label>Tình trạng
+      <select id="condition">
+        <option value="">Tất cả</option><option>Mới</option><option>Đã qua sử dụng</option>
+      </select></label>
+    <label>Giá tối đa
+      <select id="maxPrice">
+        <option value="">Không giới hạn</option>
+        <option value="600">Đến 600 triệu</option>
+        <option value="1000">Đến 1 tỷ</option>
+        <option value="1500">Đến 1,5 tỷ</option>
+      </select></label>
+    <label>Sắp xếp
+      <select id="sort">
+        <option value="priceAsc">Giá tăng dần</option>
+        <option value="priceDesc">Giá giảm dần</option>
+        <option value="yearDesc">Năm mới nhất</option>
+      </select></label>
+  </section>
+
+  <p id="count"></p>
+  <section id="grid"></section>
+</main>
+
+<script>
+  // 6. DỮ LIỆU: mảng các object. Sau này giai đoạn 3 sẽ thay bằng dữ liệu từ database.
+  //    price tính theo đơn vị "triệu đồng" để dễ so sánh và sắp xếp.
+  const cars = [
+    { name: "Toyota Camry 2.5Q",  brand: "Toyota",   year: 2024, price: 1450, condition: "Mới",            fuel: "Xăng",     color: "#cfd8e3" },
+    { name: "Honda CR-V L",       brand: "Honda",    year: 2023, price: 1100, condition: "Mới",            fuel: "Xăng",     color: "#e3d3cf" },
+    { name: "Mazda CX-5 Premium", brand: "Mazda",    year: 2021, price: 720,  condition: "Đã qua sử dụng", fuel: "Xăng",     color: "#d3e3cf" },
+    { name: "Hyundai Accent",     brand: "Hyundai",  year: 2020, price: 420,  condition: "Đã qua sử dụng", fuel: "Xăng",     color: "#e3e0cf" },
+    { name: "Kia Seltos",         brand: "Kia",      year: 2022, price: 640,  condition: "Đã qua sử dụng", fuel: "Xăng",     color: "#cfe3e1" },
+    { name: "VinFast VF 8",       brand: "VinFast",  year: 2024, price: 1090, condition: "Mới",            fuel: "Điện",     color: "#d9cfe3" },
+    { name: "Ford Ranger XLS",    brand: "Ford",     year: 2022, price: 780,  condition: "Đã qua sử dụng", fuel: "Dầu",      color: "#e3cfd9" },
+    { name: "Toyota Vios G",      brand: "Toyota",   year: 2024, price: 545,  condition: "Mới",            fuel: "Xăng",     color: "#cfe3d3" }
+  ];
+
+  // 7. Lấy tham chiếu tới các phần tử HTML một lần, dùng lại nhiều lần
+  const $ = (id) => document.getElementById(id);
+  const brandSel = $("brand"), condSel = $("condition"), priceSel = $("maxPrice"), sortSel = $("sort");
+
+  // 8. Hàm định dạng giá: 1450 -> "1,45 tỷ", 720 -> "720 triệu"
+  function formatPrice(million) {
+    if (million >= 1000) return (million / 1000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tỷ";
+    return million + " triệu";
+  }
+
+  // 9. Đổ danh sách hãng vào ô chọn tự động. Set loại bỏ giá trị trùng.
+  //    Thêm xe mới vào mảng thì hãng mới tự xuất hiện, không phải sửa HTML.
+  [...new Set(cars.map(c => c.brand))].sort().forEach(b => {
+    brandSel.insertAdjacentHTML("beforeend", `<option>${b}</option>`);
+  });
+
+  // 10. Hàm chính: đọc bộ lọc -> lọc mảng -> sắp xếp -> vẽ lại danh sách
+  function render() {
+    const maxPrice = Number(priceSel.value) || Infinity; // "" -> 0 -> falsy -> Infinity (không giới hạn)
+
+    // filter() giữ lại những xe thoả MỌI điều kiện (ô nào để trống thì bỏ qua điều kiện đó)
+    let list = cars.filter(c =>
+      (!brandSel.value || c.brand === brandSel.value) &&
+      (!condSel.value  || c.condition === condSel.value) &&
+      c.price <= maxPrice
+    );
+
+    // sort() với hàm so sánh: số âm = a đứng trước b
+    const sorters = {
+      priceAsc:  (a, b) => a.price - b.price,
+      priceDesc: (a, b) => b.price - a.price,
+      yearDesc:  (a, b) => b.year - a.year
+    };
+    list.sort(sorters[sortSel.value]);
+
+    $("count").textContent = `Tìm thấy ${list.length} xe`;
+
+    // map() biến mỗi xe thành một đoạn HTML, join("") nối lại thành một chuỗi
+    $("grid").innerHTML = list.length
+      ? list.map(c => `
+          <article class="card">
+            <div class="thumb" style="background:${c.color}">🚗</div>
+            <div class="info">
+              <h3>${c.name}</h3>
+              <div class="meta">${c.year} · ${c.fuel}<span class="tag">${c.condition}</span></div>
+              <div class="price">${formatPrice(c.price)}</div>
+            </div>
+          </article>`).join("")
+      : `<p class="empty">Không có xe phù hợp. Hãy thử nới lỏng bộ lọc.</p>`;
+  }
+
+  // 11. Khi người dùng đổi bất kỳ bộ lọc nào ("change") thì vẽ lại danh sách
+  [brandSel, condSel, priceSel, sortSel].forEach(el => el.addEventListener("change", render));
+
+  render(); // vẽ lần đầu khi mở trang
+</script>
+</body>
+</html>

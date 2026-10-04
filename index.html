@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoViet Showroom | Xe mới và xe đã qua sử dụng</title>
+<meta name="description" content="AutoViet Showroom: xe mới và xe đã kiểm định, giá công khai, hỗ trợ trả góp, lái thử trước khi mua.">
+<!-- Font Be Vietnam Pro: thiết kế riêng cho tiếng Việt, hiển thị dấu rất chuẩn -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  /* Bảng màu: sửa tại đây là đổi cả trang. ink = xanh đen, cobalt = xanh chủ đạo,
+     signal = vàng biển báo giao thông, dùng riêng cho nút hành động chính */
+  :root { --ink:#0e1624; --cobalt:#1f4fd8; --signal:#ffc928; --paper:#f4f6f9;
+          --card:#fff; --line:#dfe4ea; --muted:#5d6877; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body { margin:0; background:var(--paper); color:var(--ink); line-height:1.55;
+         font-family:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
+  a { color:inherit; }
+  :focus-visible { outline:3px solid var(--cobalt); outline-offset:2px; }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 20px; }
+
+  /* Thanh đầu trang: dính trên cùng khi cuộn (sticky) */
+  .top { position:sticky; top:0; z-index:5; background:var(--ink); color:#fff; }
+  .top .wrap { display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .logo { font-weight:800; font-size:1.25rem; text-decoration:none; letter-spacing:-.02em; }
+  .logo span { color:var(--signal); }
+  nav { display:flex; align-items:center; gap:24px; font-size:.95rem; }
+  nav a { text-decoration:none; opacity:.85; }
+  nav a:hover { opacity:1; }
+  .btn { display:inline-block; padding:12px 22px; border-radius:6px; font-weight:600;
+         text-decoration:none; transition:background .15s; }
+  .btn.main { background:var(--signal); color:var(--ink); }
+  .btn.main:hover { background:#ffd957; }
+  .btn.line { border:1.5px solid rgba(255,255,255,.5); color:#fff; }
+  .btn.line:hover { background:rgba(255,255,255,.1); }
+  nav .btn { padding:8px 16px; }
+
+  /* Hero: xe lớn tràn ra mép phải, chữ căn trái */
+  .hero { background:var(--ink); color:#fff; overflow:hidden; position:relative; }
+  .hero .wrap { display:grid; grid-template-columns:1.05fr 1fr; align-items:center; min-height:480px; }
+  .hero h1 { font-size:clamp(2rem,4.6vw,3.4rem); line-height:1.1; letter-spacing:-.03em;
+             font-weight:800; margin:0 0 18px; max-width:15ch; }
+  .hero p { color:#b9c3d1; max-width:46ch; margin:0 0 28px; font-size:1.05rem; }
+  .cta { display:flex; flex-wrap:wrap; gap:12px; }
+  .hero-car { margin-right:-12%; }
+  .hero-car svg { width:100%; height:auto; display:block; }
+
+  /* Hàng cam kết: 4 cột, ngăn cách bằng đường kẻ */
+  .trust { background:var(--card); border-bottom:1px solid var(--line); }
+  .trust .wrap { display:grid; grid-template-columns:repeat(4,1fr); }
+  .trust div { padding:22px 20px; border-left:1px solid var(--line); }
+  .trust div:first-child { border-left:0; padding-left:0; }
+  .trust b { display:block; margin-bottom:2px; }
+  .trust span { color:var(--muted); font-size:.9rem; }
+
+  /* Danh sách xe */
+  section.stock { padding:48px 0 64px; }
+  .stock h2 { font-size:1.7rem; letter-spacing:-.02em; margin:0 0 6px; }
+  .stock .sub { color:var(--muted); margin:0 0 22px; }
+  .filters { display:flex; flex-wrap:wrap; gap:12px; background:var(--card);
+             border:1px solid var(--line); border-radius:8px; padding:14px; }
+  .filters label { display:flex; flex-direction:column; gap:4px; font-size:.82rem;
+                   color:var(--muted); flex:1 1 150px; }
+  .filters select { padding:10px; border:1px solid var(--line); border-radius:6px;
+                    background:var(--paper); color:var(--ink); font:inherit; }
+  #count { margin:18px 0 12px; color:var(--muted); font-size:.92rem; }
+  #grid { display:grid; gap:18px; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .card:hover { border-color:var(--cobalt); }
+  .pic { position:relative; background:#e9edf2; padding:18px 14px 6px; }
+  .pic svg, .pic img { width:100%; height:auto; display:block; }
+  .pic img { aspect-ratio:4/3; object-fit:cover; margin:-18px -14px -6px; width:calc(100% + 28px); }
+  .badge { position:absolute; top:10px; left:10px; background:var(--ink); color:#fff;
+           font-size:.75rem; font-weight:600; padding:3px 10px; border-radius:99px; }
+  .badge.used { background:var(--card); color:var(--ink); border:1px solid var(--line); }
+  .info { padding:14px 16px 18px; }
+  .info h3 { margin:0 0 8px; font-size:1.05rem; }
+  .specs { display:flex; gap:16px; color:var(--muted); font-size:.88rem; margin-bottom:12px; }
+  .specs span + span { padding-left:16px; border-left:1px solid var(--line); }
+  .row { display:flex; justify-content:space-between; align-items:center; }
+  .price { font-weight:800; font-size:1.2rem; color:var(--cobalt); }
+  .info a { font-size:.88rem; font-weight:600; text-decoration:none; color:var(--ink);
+            border-bottom:2px solid var(--signal); }
+  .empty { grid-column:1/-1; padding:40px 0; text-align:center; color:var(--muted); }
+
+  /* Chân trang kiêm phần liên hệ */
+  footer { background:var(--ink); color:#b9c3d1; padding:44px 0 28px; }
+  footer .wrap { display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:28px; }
+  footer h4 { color:#fff; margin:0 0 8px; }
+  footer p { margin:0 0 6px; }
+  .copy { margin-top:28px; padding-top:16px; border-top:1px solid #243047; font-size:.82rem; }
+
+  @media (max-width:820px) {
+    .hero .wrap { grid-template-columns:1fr; padding-top:36px; min-height:0; }
+    .hero-car { margin:12px -20px 0 10%; }
+    nav a.hide { display:none; }
+    .trust .wrap { grid-template-columns:1fr 1fr; }
+    .trust div:nth-child(3) { border-left:0; padding-left:0; }
+    footer .wrap { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#">Auto<span>Viet</span></a>
+    <nav>
+      <a class="hide" href="#xe">Xe đang bán</a>
+      <a class="hide" href="#lien-he">Liên hệ</a>
+      <a class="btn main" href="#lien-he">Đặt lịch lái thử</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Xe đã kiểm tra kỹ, giá ghi rõ từng khoản.</h1>
+      <p>Mỗi xe tại AutoViet có hồ sơ kiểm định và báo giá đầy đủ, để bạn quyết định khi đã nắm hết thông tin.</p>
+      <div class="cta">
+        <a class="btn main" href="#xe">Xem xe đang bán</a>
+        <a class="btn line" href="#lien-he">Nhận tư vấn</a>
+      </div>
+    </div>
+    <div class="hero-car" id="heroCar"></div>
+  </div>
+</section>
+
+<section class="trust">
+  <div class="wrap">
+    <div><b>Hồ sơ xe rõ ràng</b><span>Số km, lịch sử bảo dưỡng, tình trạng thân vỏ</span></div>
+    <div><b>Giá công khai</b><span>Giá niêm yết, không phụ phí ẩn</span></div>
+    <div><b>Hỗ trợ trả góp</b><span>Tính trước khoản trả hàng tháng</span></div>
+    <div><b>Lái thử trước khi mua</b><span>Đặt lịch theo giờ bạn rảnh</span></div>
+  </div>
+</section>
+
+<main class="wrap">
+  <section class="stock" id="xe">
+    <h2>Xe đang bán</h2>
+    <p class="sub">Lọc theo hãng, tình trạng và mức giá bạn cân nhắc.</p>
+    <div class="filters">
+      <label>Hãng xe <select id="brand"><option value="">Tất cả</option></select></label>
+      <label>Tình trạng <select id="condition"><option value="">Tất cả</option><option>Mới</option><option>Đã qua sử dụng</option></select></label>
+      <label>Giá tối đa <select id="maxPrice"><option value="">Không giới hạn</option><option value="600">Đến 600 triệu</option><option value="1000">Đến 1 tỷ</option><option value="1500">Đến 1,5 tỷ</option></select></label>
+      <label>Sắp xếp <select id="sort"><option value="priceAsc">Giá tăng dần</option><option value="priceDesc">Giá giảm dần</option><option value="yearDesc">Năm mới nhất</option></select></label>
+    </div>
+    <p id="count" aria-live="polite"></p>
+    <div id="grid"></div>
+  </section>
+</main>
+
+<footer id="lien-he">
+  <div class="wrap">
+    <div><h4>AutoViet Showroom</h4><p>Xe mới và xe đã kiểm định, tư vấn trực tiếp tại showroom.</p></div>
+    <div><h4>Liên hệ</h4><p>Điện thoại: 0900 000 000</p><p>Email: lienhe@autoviet.example</p><p>Địa chỉ: (cập nhật địa chỉ thật)</p></div>
+    <div><h4>Giờ mở cửa</h4><p>Thứ Hai đến Thứ Bảy: 8:00 - 18:00</p><p>Chủ nhật: 9:00 - 16:00</p></div>
+  </div>
+  <div class="wrap copy">© <span id="yr"></span> AutoViet Showroom. Dữ liệu xe và giá hiện chỉ là mẫu.</div>
+</footer>
+
+<script>
+  // DỮ LIỆU xe. type: kiểu dáng (sedan/suv/pickup), color: màu thân xe.
+  // Khi có ảnh thật, thêm dòng image: "images/camry.webp" vào xe tương ứng, trang sẽ tự dùng ảnh.
+  const cars = [
+    { name:"Toyota Camry 2.5Q",  brand:"Toyota",  year:2024, price:1450, condition:"Mới",            fuel:"Xăng", type:"sedan",  color:"#1c2433" },
+    { name:"Honda CR-V L",       brand:"Honda",   year:2023, price:1100, condition:"Mới",            fuel:"Xăng", type:"suv",    color:"#aab3bf" },
+    { name:"Mazda CX-5 Premium", brand:"Mazda",   year:2021, price:720,  condition:"Đã qua sử dụng", fuel:"Xăng", type:"suv",    color:"#8c1f2b" },
+    { name:"Hyundai Accent",     brand:"Hyundai", year:2020, price:420,  condition:"Đã qua sử dụng", fuel:"Xăng", type:"sedan",  color:"#eef0f3" },
+    { name:"Kia Seltos",         brand:"Kia",     year:2022, price:640,  condition:"Đã qua sử dụng", fuel:"Xăng", type:"suv",    color:"#3a5a7d" },
+    { name:"VinFast VF 8",       brand:"VinFast", year:2024, price:1090, condition:"Mới",            fuel:"Điện", type:"suv",    color:"#2d7a64" },
+    { name:"Ford Ranger XLS",    brand:"Ford",    year:2022, price:780,  condition:"Đã qua sử dụng", fuel:"Dầu",  type:"pickup", color:"#5a6068" },
+    { name:"Toyota Vios G",      brand:"Toyota",  year:2024, price:545,  condition:"Mới",            fuel:"Xăng", type:"sedan",  color:"#f2f4f7" }
+  ];
+
+  // Hình xe minh họa bằng SVG (hình vector viết bằng code) cho đến khi có ảnh thật.
+  const BODY = {
+    sedan:  "M10 74V60Q10 54 18 52L52 46L76 24Q80 20 88 20H150Q158 20 164 26L184 46L222 52Q232 54 232 62V74Z",
+    suv:    "M10 74V58Q10 52 18 50L50 44L68 22Q72 18 80 18H172Q180 18 186 24L200 46L224 52Q232 54 232 62V74Z",
+    pickup: "M10 74V58Q10 52 18 50L54 44L74 22Q78 18 86 18H136Q142 18 146 24L152 44H228L232 50V74Z"
+  };
+  const GLASS = {
+    sedan:"M84 27H150L170 45H66Z", suv:"M76 24H172L192 45H62Z", pickup:"M80 24H136L142 45H64Z"
+  };
+  function carSVG(type, color) {
+    return `<svg viewBox="0 0 240 100" role="img" aria-label="Hình minh họa xe">
+      <ellipse cx="120" cy="92" rx="104" ry="5" fill="rgba(14,22,36,.14)"/>
+      <path d="${BODY[type]}" fill="${color}" stroke="rgba(14,22,36,.25)" stroke-width="1"/>
+      <path d="${GLASS[type]}" fill="rgba(210,225,240,.85)"/>
+      <circle cx="66" cy="76" r="15" fill="#161d2a"/><circle cx="66" cy="76" r="6" fill="#cfd6de"/>
+      <circle cx="180" cy="76" r="15" fill="#161d2a"/><circle cx="180" cy="76" r="6" fill="#cfd6de"/>
+    </svg>`;
+  }
+  document.getElementById("heroCar").innerHTML = carSVG("suv", "#1f4fd8");
+  document.getElementById("yr").textContent = new Date().getFullYear();
+
+  const $ = (id) => document.getElementById(id);
+  const brandSel = $("brand"), condSel = $("condition"), priceSel = $("maxPrice"), sortSel = $("sort");
+
+  // 1450 -> "1,45 tỷ", 720 -> "720 triệu"
+  function formatPrice(m) {
+    return m >= 1000 ? (m / 1000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tỷ" : m + " triệu";
+  }
+
+  // Tạo danh sách hãng tự động từ dữ liệu
+  [...new Set(cars.map(c => c.brand))].sort().forEach(b =>
+    brandSel.insertAdjacentHTML("beforeend", `<option>${b}</option>`));
+
+  // Lọc -> sắp xếp -> vẽ lại danh sách
+  function render() {
+    const maxPrice = Number(priceSel.value) || Infinity;
+    const list = cars.filter(c =>
+      (!brandSel.value || c.brand === brandSel.value) &&
+      (!condSel.value || c.condition === condSel.value) &&
+      c.price <= maxPrice);
+    const sorters = { priceAsc:(a,b)=>a.price-b.price, priceDesc:(a,b)=>b.price-a.price, yearDesc:(a,b)=>b.year-a.year };
+    list.sort(sorters[sortSel.value]);
+
+    $("count").textContent = `${list.length} xe phù hợp`;
+    $("grid").innerHTML = list.length ? list.map(c => `
+      <article class="card">
+        <div class="pic">
+          ${c.image ? `<img src="${c.image}" alt="${c.name}" loading="lazy">` : carSVG(c.type, c.color)}
+          <span class="badge ${c.condition === "Mới" ? "" : "used"}">${c.condition}</span>
+        </div>
+        <div class="info">
+          <h3>${c.name}</h3>
+          <div class="specs"><span>Năm ${c.year}</span><span>${c.fuel}</span></div>
+          <div class="row"><span class="price">${formatPrice(c.price)}</span><a href="#lien-he">Nhận báo giá</a></div>
+        </div>
+      </article>`).join("")
+      : `<p class="empty">Chưa có xe khớp bộ lọc. Hãy nới mức giá hoặc chọn hãng khác.</p>`;
+  }
+  [brandSel, condSel, priceSel, sortSel].forEach(el => el.addEventListener("change", render));
+  render();
+</script>
+</body>
+</html>
